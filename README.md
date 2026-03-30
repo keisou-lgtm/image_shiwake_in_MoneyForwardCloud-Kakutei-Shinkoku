@@ -33,7 +33,7 @@ iPhoneで領収書を撮影 → Google Drive に保存 → Claude が読み取�
 ### 1. リポジトリをクローン
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/receipt-automation.git
+git clone https://github.com/keisou-lgtm/image_shiwake_in_MoneyForwardCloud-Kakutei-Shinkoku.git
 cd receipt-automation
 npm install
 ```
