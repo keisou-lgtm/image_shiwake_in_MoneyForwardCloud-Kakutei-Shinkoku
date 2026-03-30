@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XMind Converter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #222240;
+      --accent: #42A5F5;
+      --accent2: #7E57C2;
+      --text: #e8e8f0;
+      --text-dim: #8888aa;
+      --border: rgba(255,255,255,0.1);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: var(--text-dim);
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Form elements */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, input[type="url"]:focus {
+      border-color: var(--accent);
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(66, 165, 245, 0.05);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .drop-zone .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .drop-zone .hint { color: var(--text-dim); font-size: 0.85rem; }
+    .drop-zone .file-name {
+      margin-top: 0.5rem;
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Auth notice */
+    .auth-notice {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-top: 0.8rem;
+      text-align: center;
+    }
+    .auth-notice a { color: var(--accent); text-decoration: none; }
+    .auth-notice a:hover { text-decoration: underline; }
+
+    /* Status */
+    #status {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1rem;
+    }
+    .status-msg {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status-msg.info  { background: rgba(66,165,245,0.15); border: 1px solid rgba(66,165,245,0.3); color: #90CAF9; display: block; }
+    .status-msg.error { background: rgba(239,83,80,0.15);  border: 1px solid rgba(239,83,80,0.3);  color: #EF9A9A; display: block; }
+    .status-msg.warn  { background: rgba(255,167,38,0.15); border: 1px solid rgba(255,167,38,0.3); color: #FFCC80; display: block; }
+
+    /* Results */
+    #results {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1rem;
+      display: none;
+    }
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .result-card h3 {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .btn-sm {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-download {
+      background: linear-gradient(135deg, #66BB6A, #26A69A);
+      color: #fff;
+    }
+    .btn-preview-toggle {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-sm:hover { opacity: 0.85; }
+
+    #preview-iframe {
+      width: 100%;
+      height: 500px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0f0f1a;
+      display: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>XMind Converter</h1>
+  <p>Markdown または Google Docs から XMindマインドマップを生成</p>
+</header>
+
+<div class="card">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="markdown">Markdown ファイル</button>
+    <button class="tab-btn" data-tab="googledocs">Google Docs URL</button>
+  </div>
+
+  <!-- Markdown tab -->
+  <div id="tab-markdown" class="tab-panel active">
+    <label>Markdownファイル (.md) をアップロード</label>
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="md-file" accept=".md,text/markdown">
+      <div class="icon">📄</div>
+      <div>ファイルをドラッグ＆ドロップ、またはクリックして選択</div>
+      <div class="hint">.md ファイルのみ対応</div>
+      <div class="file-name" id="file-name-label"></div>
+    </div>
+    <button class="btn" id="btn-convert-md" disabled>変換する</button>
+  </div>
+
+  <!-- Google Docs tab -->
+  <div id="tab-googledocs" class="tab-panel">
+    <label for="docs-url">Google Docs URL</label>
+    <input type="url" id="docs-url" placeholder="https://docs.google.com/document/d/...">
+    <p class="auth-notice">
+      Google認証が必要です。初回は <a href="/auth/google" target="_blank">こちらで認証</a> してください。
+    </p>
+    <button class="btn" id="btn-convert-docs">変換する</button>
+  </div>
+</div>
+
+<!-- Status -->
+<div id="status">
+  <div class="status-msg" id="status-msg"></div>
+</div>
+
+<!-- Results -->
+<div id="results">
+  <div class="result-card">
+    <h3>変換結果</h3>
+    <div class="result-actions">
+      <button class="btn-sm btn-download" id="btn-download">.xmind をダウンロード</button>
+      <button class="btn-sm btn-preview-toggle" id="btn-preview-toggle">HTMLプレビュー表示</button>
+    </div>
+    <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+</div>
+
+<script>
+  // ── Tab switching ──────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      clearStatus();
+      hideResults();
+    });
+  });
+
+  // ── File upload ────────────────────────────────────────────────
+  const mdFileInput = document.getElementById('md-file');
+  const fileNameLabel = document.getElementById('file-name-label');
+  const btnConvertMd = document.getElementById('btn-convert-md');
+  const dropZone = document.getElementById('drop-zone');
+
+  mdFileInput.addEventListener('change', () => {
+    const file = mdFileInput.files[0];
+    if (file) {
+      fileNameLabel.textContent = '📎 ' + file.name;
+      btnConvertMd.disabled = false;
+    }
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.md')) {
+      mdFileInput.files = e.dataTransfer.files;
+      fileNameLabel.textContent = '📎 ' + file.name;
+      btnConvertMd.disabled = false;
+    } else {
+      showStatus('.md ファイルのみ対応しています', 'error');
+    }
+  });
+
+  // ── Convert: Markdown ──────────────────────────────────────────
+  btnConvertMd.addEventListener('click', async () => {
+    const file = mdFileInput.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('mdfile', file);
+
+    setBtnLoading(btnConvertMd, true);
+    showStatus('変換中...', 'info');
+    hideResults();
+
+    try {
+      const data = await postForm('/convert/markdown', formData);
+      handleResult(data);
+    } catch (err) {
+      showStatus('エラー: ' + err.message, 'error');
+    } finally {
+      setBtnLoading(btnConvertMd, false);
+    }
+  });
+
+  // ── Convert: Google Docs ────────────────────────────────────────
+  document.getElementById('btn-convert-docs').addEventListener('click', async () => {
+    const url = document.getElementById('docs-url').value.trim();
+    if (!url) { showStatus('URLを入力してください', 'warn'); return; }
+
+    const btn = document.getElementById('btn-convert-docs');
+    setBtnLoading(btn, true);
+    showStatus('変換中...', 'info');
+    hideResults();
+
+    try {
+      const data = await postJSON('/convert/googledocs', { url });
+      if (data.error === 'auth_required') {
+        showStatus('Google認証が必要です。<a href="/auth/google" target="_blank">こちらで認証してください</a>', 'warn');
+        return;
+      }
+      handleResult(data);
+    } catch (err) {
+      showStatus('エラー: ' + err.message, 'error');
+    } finally {
+      setBtnLoading(btn, false);
+    }
+  });
+
+  // ── Result handling ────────────────────────────────────────────
+  let currentXmindBase64 = null;
+  let currentFileName = 'mindmap';
+  let previewVisible = false;
+
+  function handleResult(data) {
+    clearStatus();
+    currentXmindBase64 = data.xmindBase64;
+    currentFileName = data.fileName || 'mindmap';
+    previewVisible = false;
+
+    document.getElementById('preview-iframe').style.display = 'none';
+    document.getElementById('btn-preview-toggle').textContent = 'HTMLプレビュー表示';
+
+    // Load preview into iframe
+    const iframe = document.getElementById('preview-iframe');
+    const blob = new Blob([data.htmlContent], { type: 'text/html' });
+    iframe.src = URL.createObjectURL(blob);
+
+    document.getElementById('results').style.display = 'block';
+  }
+
+  document.getElementById('btn-download').addEventListener('click', () => {
+    if (!currentXmindBase64) return;
+    const bytes = Uint8Array.from(atob(currentXmindBase64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentFileName + '.xmind';
+    a.click();
+  });
+
+  document.getElementById('btn-preview-toggle').addEventListener('click', () => {
+    const iframe = document.getElementById('preview-iframe');
+    previewVisible = !previewVisible;
+    iframe.style.display = previewVisible ? 'block' : 'none';
+    document.getElementById('btn-preview-toggle').textContent =
+      previewVisible ? 'HTMLプレビュー非表示' : 'HTMLプレビュー表示';
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────
+  async function postForm(url, formData) {
+    const res = await fetch(url, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    return data;
+  }
+
+  async function postJSON(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok && data.error !== 'auth_required') throw new Error(data.error || res.statusText);
+    return data;
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status-msg');
+    el.innerHTML = msg;
+    el.className = 'status-msg ' + type;
+  }
+
+  function clearStatus() {
+    const el = document.getElementById('status-msg');
+    el.className = 'status-msg';
+    el.textContent = '';
+  }
+
+  function hideResults() {
+    document.getElementById('results').style.display = 'none';
+  }
+
+  function setBtnLoading(btn, loading) {
+    if (loading) {
+      btn._origText = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span>変換中...';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = btn._origText || '変換する';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Google OAuth2 認証情報（絶対にコミットしないこと）
+credentials.json
+token.json
+
+# Claude Code のローカル設定（アクセストークン等が含まれる）
+.claude/settings.local.json
+
+# 環境変数
+.env
+
+# Node.js
+node_modules/
+
+# ログ
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 一時ファイル
+*.tmp
+*.log
