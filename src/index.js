@@ -18,8 +18,6 @@ const {
   renameFile,
   moveFile,
 } = require('./services/googleDriveService');
-const { uploadReceiptToJournal } = require('./services/mfcAttachmentService');
-const { compressIfNeeded }       = require('./services/imageService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -196,46 +194,6 @@ app.post('/drive/file/:fileId/move', async (req, res) => {
   } catch (err) {
     if (err.authUrl) return res.status(401).json({ error: 'auth_required', authUrl: err.authUrl });
     console.error('Drive move error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Upload receipt image as attachment to an MFC journal entry
-// 5MB超の場合は自動的にJPEG圧縮してからアップロードする
-app.post('/mfc/journals/:journalId/receipts', async (req, res) => {
-  try {
-    const { accessToken, fileId, fileName, mimeType } = req.body;
-    if (!accessToken || !fileId) {
-      return res.status(400).json({ error: 'accessToken and fileId are required' });
-    }
-
-    // Google Driveから画像をダウンロード
-    const {
-      buffer: rawBuffer,
-      mimeType: detectedMime,
-      name: detectedName,
-    } = await downloadFileAsBuffer(fileId);
-
-    const usedMime = mimeType || detectedMime;
-    const usedName = fileName || detectedName;
-
-    // 5MB超の場合は圧縮
-    const { buffer, mimeType: finalMime, compressed } = await compressIfNeeded(rawBuffer, usedMime);
-    if (compressed) {
-      console.log(`[receipts] 圧縮完了: ${(rawBuffer.length / 1024 / 1024).toFixed(2)}MB → ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
-    }
-
-    const result = await uploadReceiptToJournal(
-      accessToken,
-      req.params.journalId,
-      buffer,
-      usedName,
-      finalMime
-    );
-    res.json({ ...result, compressed });
-  } catch (err) {
-    if (err.authUrl) return res.status(401).json({ error: 'auth_required', authUrl: err.authUrl });
-    console.error('MFC receipt upload error:', err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -143,31 +143,7 @@ mfc_ca_postJournals(
 
 登録に成功したらレスポンスから `journal.id` を控える。
 
-### Step 7: 証憑画像をアップロード
-
-> サーバーが自動的に5MB超の画像を圧縮してからアップロードする（拡張子は変えない）。
-
-同じく「ファイル経由」で呼ぶ:
-
-1. **Write ツール**でJSONファイルを作成:
-
-```json
-// C:/Users/sitex/AppData/Local/Temp/receipt_body.json
-{
-  "accessToken": "<access_token>",
-  "fileId": "<GoogleDriveのfileId>",
-  "fileName": "20260315_3300円_消耗品費_ローソン.jpg",
-  "mimeType": "image/jpeg"
-}
-```
-
-2. **Bash ツール**で実行:
-
-```bash
-node scripts/api.js POST mfc/journals/{journalId}/receipts C:/Users/sitex/AppData/Local/Temp/receipt_body.json
-```
-
-### Step 8: 処理済みフォルダへ移動
+### Step 7: 処理済みフォルダへ移動
 
 フォルダIDはASCIIのみなのでcurlで直接可:
 
@@ -177,7 +153,7 @@ curl -s -X POST http://localhost:3000/drive/file/{fileId}/move \
   -d "{\"oldParentId\":\"1sINpf7XL_MpZNFDN7UNhw4bpJIU9meVf\",\"newParentId\":\"1lHOcuB0dxIXlXGEMbB5MXP773fIdmkcp\"}"
 ```
 
-### Step 9: 完了報告
+### Step 8: 完了報告
 
 処理した仕訳の件数・合計金額をユーザーに報告する。
 
